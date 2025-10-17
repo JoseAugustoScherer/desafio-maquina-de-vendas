@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,6 +36,27 @@ namespace ToshyroApp
                 { "Água",       ( 1.00, 10 ) },
                 { "Pastelina",  ( 0.30, 10 ) },
             };
+        }
+
+        public void inserirMoedas( Double moeda )
+        {
+            if ( moedasValidas.Contains( moeda ))
+            {
+                moedasInseridas.Add( moeda );
+                trocoPendente = trocoPendente + moeda; // Nao usei o += por questao de legibilidade...
+            }
+        }
+
+        // Formatador de moeda, ja que no BR usamos "," como separador decimal, essa funcao auxiliar faz isso.
+        private string formatadorDeMoeda( Double valor )
+        {
+            string formatada = valor.ToString("0.00", CultureInfo.InvariantCulture ).Replace( ".", "," );
+
+            if ( formatada.Contains( "," ) )
+            {
+                formatada = formatada.TrimEnd( '0' ).TrimEnd( ',' ); 
+            }
+            return formatada;
         }
     }
 }
