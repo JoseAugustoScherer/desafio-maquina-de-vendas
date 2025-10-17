@@ -73,15 +73,57 @@ namespace ToshyroApp
             return $"{nomeDoProduto} = {formatadorDeMoeda( trocoTotal )}";
         }
 
+        public string obterTroco()
+        {
+            if ( trocoPendente == 0 ) return "NO_CHANGE";
+
+            List<Double> moedasDoTroco = calcularTroco( trocoPendente );
+
+            if ( moedasDoTroco == null ) return "NO-COINS";
+
+            trocoPendente = 0;
+
+            return string.Join( " ", moedasDoTroco.Select( formatadorDeMoeda ));
+        }
+
+        private List<Double> calcularTroco( double quantia )
+        {
+            List<Double> troco = new List<Double>();
+
+            Double restante = Math.Round( quantia, 2 );
+
+            var moedasOrdenadas = moedasDaMaquina.Keys.OrderByDescending( x => x ).ToList();
+
+            foreach( var moeda in moedasOrdenadas )
+            {
+                while ( restante >= moeda 
+                    && moedasDaMaquina[moeda] > 0)
+                {
+                    troco.Add( moeda );
+                    moedasDaMaquina[moeda]--;
+                    restante -= moeda;
+                    restante = Math.Round( restante, 2 );
+                }
+            }
+
+            if ( restante > 0 )
+            {
+                foreach ( var moeda in troco )
+                {
+                    moedasDaMaquina[moeda]++;
+                    return null;
+                }
+            }
+            return troco;
+        }
+
         // Formatador de moeda, ja que no BR usamos "," como separador decimal, essa funcao auxiliar faz isso.
         private string formatadorDeMoeda( Double valor )
         {
             string formatada = valor.ToString("0.00", CultureInfo.InvariantCulture ).Replace( ".", "," );
 
-            if ( formatada.Contains( "," ) )
-            {
-                formatada = formatada.TrimEnd( '0' ).TrimEnd( ',' ); 
-            }
+            if ( formatada.Contains( "," ) ) formatada = formatada.TrimEnd( '0' ).TrimEnd( ',' ); 
+       
             return formatada;
         }
     }
