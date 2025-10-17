@@ -47,6 +47,32 @@ namespace ToshyroApp
             }
         }
 
+        public string efetuarCompra( string nomeDoProduto)
+        {
+            if ( !produtosDaMaquina.ContainsKey( nomeDoProduto )
+                || produtosDaMaquina[nomeDoProduto].quantidade <= 0
+                || trocoPendente < produtosDaMaquina[nomeDoProduto].preco )
+            {
+                return "NO_PRODUCT";
+            }
+
+            var ( preco, quantidade ) = produtosDaMaquina[nomeDoProduto];
+
+            Double trocoTotal = trocoPendente - preco;
+
+            produtosDaMaquina[nomeDoProduto] = ( preco, quantidade - 1 );
+
+
+            foreach( var moeda in moedasInseridas )
+            {
+                moedasDaMaquina[moeda]++;
+            }
+            moedasInseridas.Clear();
+            trocoPendente = trocoTotal;
+
+            return $"{nomeDoProduto} = {formatadorDeMoeda( trocoTotal )}";
+        }
+
         // Formatador de moeda, ja que no BR usamos "," como separador decimal, essa funcao auxiliar faz isso.
         private string formatadorDeMoeda( Double valor )
         {
