@@ -2,129 +2,123 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ToshyroApp
 {
     internal class Maquina
     {
-        private List<Double> moedasInseridas;
+        private List<Decimal> moedasInseridas;
+        private Decimal trocoPendente;
+        private Dictionary<Decimal, int> moedasDaMaquina;
+        private Dictionary<String, (Decimal preco, int quantidade)> produtosDaMaquina;
 
-        private Double trocoPendente;
-
-        private Dictionary<Double, int> moedasDaMaquina;
-        private Dictionary<String, (Double preco, int quantidade)> produtosDaMaquina;
-        
-        private readonly Double[] moedasValidas = { 0.01, 0.05, 0.10, 0.25, 0.50, 1.00 };
+        private readonly Decimal[] moedasValidas = { 0.01m, 0.05m, 0.10m, 0.25m, 0.50m, 1.00m };
 
         public Maquina()
         {
-            moedasInseridas = new List<Double>();
+            moedasInseridas = new List<Decimal>();
+            trocoPendente = 0.0m;
 
-            trocoPendente = 0.0;
-
-            moedasDaMaquina = new Dictionary<Double, int>
+            moedasDaMaquina = new Dictionary<Decimal, int>
             {
-                { 0.01, 10 }, { 0.05, 10 }, { 0.10, 10 },
-                { 0.25, 10 }, { 0.50, 10 }, { 1.00, 10 }
+                { 0.01m, 10 }, { 0.05m, 10 }, { 0.10m, 10 },
+                { 0.25m, 10 }, { 0.50m, 10 }, { 1.00m, 10 }
             };
 
-            produtosDaMaquina = new Dictionary<string, (double preco, int quantidade)>
+            produtosDaMaquina = new Dictionary<string, (Decimal preco, int quantidade)>
             {
-                { "Coca-cola",  ( 1.50, 10 ) },
-                { "Água",       ( 1.00, 10 ) },
-                { "Pastelina",  ( 0.30, 10 ) },
+                { "Coca-Cola",  ( 1.50m, 10 ) },
+                { "Água",       ( 1.00m, 10 ) },
+                { "Pastelina",  ( 0.30m, 10 ) },
             };
         }
 
-        public void inserirMoedas( Double moeda )
+        public void inserirMoedas(Decimal moeda)
         {
-            if ( moedasValidas.Contains( moeda ))
+            if (moedasValidas.Contains(moeda))
             {
-                moedasInseridas.Add( moeda );
+                moedasInseridas.Add(moeda);
                 trocoPendente = trocoPendente + moeda; // Nao usei o += por questao de legibilidade...
             }
         }
 
-        public string efetuarCompra( string nomeDoProduto)
+        public string efetuarCompra(string nomeDoProduto)
         {
-            if ( !produtosDaMaquina.ContainsKey( nomeDoProduto )
+            if (!produtosDaMaquina.ContainsKey(nomeDoProduto)
                 || produtosDaMaquina[nomeDoProduto].quantidade <= 0
-                || trocoPendente < produtosDaMaquina[nomeDoProduto].preco )
+                || trocoPendente < produtosDaMaquina[nomeDoProduto].preco)
             {
                 return "NO_PRODUCT";
             }
 
-            var ( preco, quantidade ) = produtosDaMaquina[nomeDoProduto];
+            var (preco, quantidade) = produtosDaMaquina[nomeDoProduto];
+            Decimal trocoTotal = trocoPendente - preco;
 
-            Double trocoTotal = trocoPendente - preco;
+            produtosDaMaquina[nomeDoProduto] = (preco, quantidade - 1);
 
-            produtosDaMaquina[nomeDoProduto] = ( preco, quantidade - 1 );
-
-
-            foreach( var moeda in moedasInseridas )
+            foreach (var moeda in moedasInseridas)
             {
                 moedasDaMaquina[moeda]++;
             }
             moedasInseridas.Clear();
             trocoPendente = trocoTotal;
 
-            return $"{nomeDoProduto} = {formatadorDeMoeda( trocoTotal )}";
+            return $"{nomeDoProduto} = {formatadorDeMoeda(trocoTotal)}";
         }
 
         public string obterTroco()
         {
-            if ( trocoPendente == 0 ) return "NO_CHANGE";
+            if (trocoPendente == 0) return "NO_CHANGE";
 
-            List<Double> moedasDoTroco = calcularTroco( trocoPendente );
+            List<Decimal> moedasDoTroco = calcularTroco(trocoPendente);
 
-            if ( moedasDoTroco == null ) return "NO-COINS";
+            if (moedasDoTroco == null) return "NO_COIMS";
 
             trocoPendente = 0;
 
-            return string.Join( " ", moedasDoTroco.Select( formatadorDeMoeda ));
+            return string.Join(" ", moedasDoTroco.Select(formatadorDeMoeda));
         }
 
-        private List<Double> calcularTroco( double quantia )
+        private List<Decimal> calcularTroco(Decimal quantia)
         {
-            List<Double> troco = new List<Double>();
+            List<Decimal> troco = new List<Decimal>();
+            Decimal restante = Math.Round(quantia, 2);
 
-            Double restante = Math.Round( quantia, 2 );
+            var moedasOrdenadas = moedasDaMaquina.Keys.OrderByDescending(x => x).ToList();
 
-            var moedasOrdenadas = moedasDaMaquina.Keys.OrderByDescending( x => x ).ToList();
-
-            foreach( var moeda in moedasOrdenadas )
+            foreach (var moeda in moedasOrdenadas)
             {
-                while ( restante >= moeda 
-                    && moedasDaMaquina[moeda] > 0)
+                while (restante >= moeda && moedasDaMaquina[moeda] > 0)
                 {
-                    troco.Add( moeda );
+                    troco.Add(moeda);
                     moedasDaMaquina[moeda]--;
                     restante -= moeda;
-                    restante = Math.Round( restante, 2 );
+                    restante = Math.Round(restante, 2);
                 }
             }
 
-            if ( restante > 0 )
+            if (restante > 0)
             {
-                foreach ( var moeda in troco )
+                foreach (var moeda in troco)
                 {
                     moedasDaMaquina[moeda]++;
-                    return null;
                 }
+                return null;
             }
             return troco;
         }
 
         // Formatador de moeda, ja que no BR usamos "," como separador decimal, essa funcao auxiliar faz isso.
-        private string formatadorDeMoeda( Double valor )
+        private string formatadorDeMoeda(Decimal valor)
         {
-            string formatada = valor.ToString("0.00", CultureInfo.InvariantCulture ).Replace( ".", "," );
+            return valor.ToString("0.00", CultureInfo.InvariantCulture).Replace(".", ",");
+        }
 
-            if ( formatada.Contains( "," ) ) formatada = formatada.TrimEnd( '0' ).TrimEnd( ',' ); 
-       
-            return formatada;
+        // Faz o mesmo que o formatadorDeMoedas, mas para entrada do usuario.
+        public static bool formatadorDeEntrada (string entrada, out decimal resultado)
+        {
+            string normalizador = entrada.Replace(',', '.');
+            return decimal.TryParse(normalizador, NumberStyles.Any, CultureInfo.InvariantCulture, out resultado);
         }
     }
 }
